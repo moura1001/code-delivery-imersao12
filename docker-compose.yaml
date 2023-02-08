@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  route-simulator:
+    build: ./route-simulator
+    container_name: route-simulator
+    networks:
+      - code-delivery-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+
+networks:
+  code-delivery-network:
+    external: true
