@@ -5,6 +5,7 @@ import (
 	"os"
 	"encoding/json"
 	"time"
+	"fmt"
 
 	infrakafka "github.com/moura1001/route-simulator/src/infra/kafka"
 	model "github.com/moura1001/route-simulator/src/model"
@@ -26,15 +27,36 @@ func Produce(msg *kafka.Message) {
 		positions, err := route.GetPositionsJSONFormatted()
 
 		if err == nil {
+
+			deliveryChan := make(chan kafka.Event)
+			go func() {
+				for e := range deliveryChan {
+					switch ev := e.(type) {
+					case *kafka.Message:
+						m := ev
+						if m.TopicPartition.Error != nil {
+							fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
+						} else {
+							fmt.Printf("Delivered message to: %s[%d]@%v\n",
+								*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
+						}
+					default:
+						fmt.Printf("Ignored event: %s\n", ev)
+					}
+				}
+			}()
 			
 			for _, pos := range positions {
-				err = infrakafka.Publish(pos, os.Getenv("KAFKA_PRODUCE_TOPIC"), producer)
+
+				err = infrakafka.Publish(pos, os.Getenv("KAFKA_PRODUCE_TOPIC"), producer, deliveryChan)
 				if err != nil {
 					log.Println(err.Error())
 				}				
 				
 				time.Sleep(time.Millisecond * 500)
 			}
+
+			close(deliveryChan)
 		
 		} else {
 			log.Println(err.Error())
@@ -43,4 +65,6 @@ func Produce(msg *kafka.Message) {
 	} else {
 		log.Println(err.Error())
 	}
+
+	producer.Close()
 }

@@ -10,6 +10,8 @@ version: "3"
 # kafka-console-consumer --topic=mytest --bootstrap-server=kafka:9092
 # producer:
 # kafka-console-producer --topic=mytest --bootstrap-server=kafka:9092
+# {"routeId":"1","clientId":"1"}
+# {"routeId":"1","clientId":"1","position":[-15.82651,-47.92878],"finished":false}
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:latest

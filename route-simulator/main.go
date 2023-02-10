@@ -17,6 +17,8 @@ func init() {
 	}
 }
 
+// confluent-kafka-go documentation: docs.confluent.io/platform/current/clients/confluent-kafka-go
+// examples: pkg.go.dev/github.com/confluentinc/confluent-kafka-go/examples
 func main() {
 	
 	fmt.Println("started")

@@ -20,13 +20,14 @@ func NewKafkaProducer() *kafka.Producer {
 	return p
 }
 
-func Publish(message, topic string, producer *kafka.Producer) error {
+func Publish(message, topic string, producer *kafka.Producer, deliveryChan chan kafka.Event) error {
+
 	m := &kafka.Message{
 		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
 		Value:          []byte(message),
 	}
 
-	err := producer.Produce(m, nil)
+	err := producer.Produce(m, deliveryChan)
 	if err != nil {
 		return fmt.Errorf("error to enqueue the message. Details: '%s'", err)
 	}
