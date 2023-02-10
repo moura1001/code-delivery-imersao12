@@ -8,6 +8,15 @@ services:
       - code-delivery-network
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
+  api:
+    build: ./spring-api
+    container_name: spring-api
+    ports:
+      - "8084:8084"
+    networks:
+      - code-delivery-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
 
 networks:
   code-delivery-network:
