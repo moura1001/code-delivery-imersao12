@@ -22,7 +22,9 @@ func (kc *KafkaConsumer) Consume() {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
 		"group.id":          os.Getenv("KAFKA_CONSUMER_GROUP_ID"),
-		"auto.offset.reset": "earliest",
+		"auto.offset.reset": "latest",
+		"enable.auto.offset.store": false,
+		"enable.auto.commit": false,
 	})
 
 	if err != nil {
@@ -38,7 +40,16 @@ func (kc *KafkaConsumer) Consume() {
 	for run {
 		msg, err := c.ReadMessage(-1)
 		if err == nil {
-			kc.MessageChan <- msg
+			stOffset, err := c.StoreOffsets([]kafka.TopicPartition{
+				{Topic: msg.TopicPartition.Topic, Partition: msg.TopicPartition.Partition, Offset: msg.TopicPartition.Offset + 1},
+			})
+			if err == nil {
+				kc.MessageChan <- msg
+				fmt.Printf("offset store success: %v\n", stOffset)
+			} else {
+				fmt.Printf("offset store error from %v. Details: %v\n", msg.TopicPartition, err)
+			}
+
 		} else if !err.(kafka.Error).IsTimeout() {
 			fmt.Printf("consumer error: %v (%v)\n", err, msg)
 		}

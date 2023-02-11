@@ -15,8 +15,7 @@ public class MessageProducer {
     private String topic;
 
     public void sendMessage(RouteRequestDTO msg) {
-        kafkaTemplate.send(topic, msg);
-
+        
         ListenableFuture<SendResult<String, RouteRequestDTO>> future =
                 kafkaTemplate.send(topic, msg);
 
