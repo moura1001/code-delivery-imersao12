@@ -37,7 +37,7 @@ func Produce(msg *kafka.Message) {
 						if m.TopicPartition.Error != nil {
 							fmt.Printf("Delivery failed: %v\n", m.TopicPartition.Error)
 						} else {
-							fmt.Printf("Delivered message to: %s[%d]@%v\n",
+							fmt.Printf("Delivered message %s to: %s[%d]@%v\n", string(m.Value),
 								*m.TopicPartition.Topic, m.TopicPartition.Partition, m.TopicPartition.Offset)
 						}
 					default:
