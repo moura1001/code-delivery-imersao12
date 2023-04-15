@@ -1,5 +1,5 @@
 export interface Route {
-    id: string;
+    routeId: string;
     clientId: string;
     position: Position;
     finished: boolean;

@@ -3,8 +3,11 @@ import { Grid, Select, MenuItem, Button, makeStyles } from "@material-ui/core";
 import { Route } from '../utils/models';
 import { Navbar } from './Navbar';
 import MyMap from './MyMap';
+import { Client, StompSubscription } from '@stomp/stompjs';
+import { init } from '../utils/websocket'
 
-const API_URL = process.env.REACT_APP_API_URL;
+const DEST = "/api/routes"
+const API_URL = `${process.env.REACT_APP_API_URL}${DEST}`;
 
 const useStyles = makeStyles({
     root: {
@@ -28,9 +31,11 @@ const Content = () => {
     
     const classes = useStyles();
 
-    const [routes, setRoutes] = useState<Route[]>([]);
+    //var route: Route | null = null;
+    const [routes, setRoutes] = useState<string[]>([]);
+    const [subscriptionsId, setSubscriptionsId] = useState<string[]>([]);
     const [routeIdSelected, setRouteIdSelected] = useState<string>("");
-    //const ws = useRef(null);
+    const ws = useRef(null as unknown as Client);
 
     const handleSelectChange = (event: ChangeEvent<{ value: unknown }>): void => {
         setRouteIdSelected(event.target.value as string);
@@ -38,22 +43,54 @@ const Content = () => {
 
     const startRoute = useCallback((event: FormEvent): void => {
         event.preventDefault();
-        console.log(routeIdSelected)
-    }, [routeIdSelected]);
+        console.log(routeIdSelected);
+        console.log(routes)
+        if (ws.current && !routes.includes(routeIdSelected)) {
+
+            setRoutes(prevState => [...prevState, routeIdSelected])
+
+            const sessionId = ws.current.connectHeaders['sessionId'];
+            const subscriptionId = sessionId + "-" + routeIdSelected;
+
+            setSubscriptionsId(prevState => [...prevState, subscriptionId])
+
+            ws.current.subscribe(
+                '/user/queue/specific-user' + '-user' + sessionId,
+                msgOut => {
+                    console.log("received message: " + msgOut.body);
+                    const r: Route = JSON.parse(msgOut.body);
+                    if (r.finished) {
+                        const subscriptionId = sessionId + "-" + r.routeId
+
+                        console.log("route finished: " + JSON.stringify(r))
+                        setRoutes(prevState => prevState.filter(route => route !== r.routeId))
+                        setSubscriptionsId(prevState => prevState.filter(sub => sub !== subscriptionId))
+                        ws.current.unsubscribe(subscriptionId)
+                        console.log("unsubscribe from stomp id: " + subscriptionId)
+                    }
+                },
+                {id: subscriptionId}
+            );
+
+            ws.current.publish({
+                destination: "/api/routes",
+                body: JSON.stringify({'routeId':routeIdSelected, 'clientId':sessionId})
+            })
+        }
+    }, [routeIdSelected, routes]);
 
     useEffect(() => {
-        /*ws.current = new WebSocket("wss://ws.kraken.com/");
-        ws.current.onopen = () => console.log("ws opened");
-        ws.current.onclose = () => console.log("ws closed");
-
-        const wsCurrent = ws.current;
+        if (!ws.current) {
+            ws.current = init(API_URL)
+            ws.current.activate();
+        }
 
         return () => {
-            wsCurrent.close();
-        };*/
-        fetch(`${API_URL}/routes`)
-            .then((data) => data.json())
-            .then((data) => setRoutes(data));
+            if (ws.current?.connected) {
+                ws.current.deactivate();
+            }
+            ws.current = null as unknown as Client
+        };
     }, []);
 
     return ( 

@@ -18,11 +18,8 @@ public class RoutesController {
     //private SimpMessagingTemplate simpMessagingTemplate;
 
     @MessageMapping("/routes")
-    public void requestRoute(
-            @Payload RouteRequestDTO routeRequest,
-            @Header("simpSessionId") String sessionId
-    ){
-        routeRequest.setClientId(sessionId);
+    public void requestRoute(@Payload RouteRequestDTO routeRequest){
+        //routeRequest.setClientId(sessionId);
         producer.sendMessage(routeRequest);
         //simpMessagingTemplate.convertAndSendToUser(routeRequest.getClientId(), WebSocketConfig.WEBSOCKET_QUEUE, routeRequest);
         //String destination = WebSocketConfig.WEBSOCKET_QUEUE + "-user" + sessionId;

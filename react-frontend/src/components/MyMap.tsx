@@ -4,13 +4,19 @@ import {Point} from 'ol/geom';
 import {Feature} from 'ol';
 import 'ol/ol.css';
 import './MyMap.css'
+//import { Route } from "../utils/models";
 
 import {RMap, ROSM, RLayerVector, RStyle, RFeature, ROverlay} from 'rlayers';
+
+/*interface MyMapProps {
+    route: Route | null
+}*/
 
 const monument = '/monument.svg';
 
 let unique_id = 0;
 
+//const MyMap = ({route}: MyMapProps) => {
 const MyMap = () => {
     // The features must be part of the state as they will be modified
     const [features, setFeatures] = useState([] as Feature[]);
