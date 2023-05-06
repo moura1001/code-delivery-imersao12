@@ -20,7 +20,13 @@ public class MessageListener {
     public void listenGroup(PartialRoutePositionDTO partialRoute) {
         //System.out.println("Received Message: " + partialRoute);
 
-        String destination = WebSocketConfig.WEBSOCKET_QUEUE + "-user" + partialRoute.getClientId();
+        String destination = String.format(
+                "%s%s%s-%s",
+                WebSocketConfig.WEBSOCKET_QUEUE,
+                "-user",
+                partialRoute.getClientId(),
+                partialRoute.getRouteId()
+        );
         simpMessagingTemplate.convertAndSend(destination, partialRoute);
     }
 }

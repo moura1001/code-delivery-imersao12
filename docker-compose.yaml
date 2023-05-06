@@ -17,6 +17,17 @@ services:
       - code-delivery-network
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
+  frontend:
+    build: ./react-frontend
+    container_name: react-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - code-delivery-network
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+    depends_on: 
+      - api
 
 networks:
   code-delivery-network:

@@ -3,11 +3,10 @@ import { Grid, Select, MenuItem, Button, makeStyles } from "@material-ui/core";
 import { Route } from '../utils/models';
 import { Navbar } from './Navbar';
 import MyMap from './MyMap';
-import { Client, StompSubscription } from '@stomp/stompjs';
-import { init } from '../utils/websocket'
+import { Client } from 'stompjs';
+import { init, connect, disconnect } from '../utils/websocket'
 
-const DEST = "/api/routes"
-const API_URL = `${process.env.REACT_APP_API_URL}${DEST}`;
+const DEST_API_URL = "/api/routes"
 
 const useStyles = makeStyles({
     root: {
@@ -33,6 +32,7 @@ const Content = () => {
 
     //var route: Route | null = null;
     const [routes, setRoutes] = useState<string[]>([]);
+    const [sessionId, setSessionId] = useState<string>("");
     const [subscriptionsId, setSubscriptionsId] = useState<string[]>([]);
     const [routeIdSelected, setRouteIdSelected] = useState<string>("");
     const ws = useRef(null as unknown as Client);
@@ -43,19 +43,16 @@ const Content = () => {
 
     const startRoute = useCallback((event: FormEvent): void => {
         event.preventDefault();
-        console.log(routeIdSelected);
-        console.log(routes)
         if (ws.current && !routes.includes(routeIdSelected)) {
 
             setRoutes(prevState => [...prevState, routeIdSelected])
 
-            const sessionId = ws.current.connectHeaders['sessionId'];
             const subscriptionId = sessionId + "-" + routeIdSelected;
 
             setSubscriptionsId(prevState => [...prevState, subscriptionId])
 
             ws.current.subscribe(
-                '/user/queue/specific-user' + '-user' + sessionId,
+                '/user/queue/specific-user' + '-user' + subscriptionId,
                 msgOut => {
                     console.log("received message: " + msgOut.body);
                     const r: Route = JSON.parse(msgOut.body);
@@ -72,22 +69,24 @@ const Content = () => {
                 {id: subscriptionId}
             );
 
-            ws.current.publish({
-                destination: "/api/routes",
-                body: JSON.stringify({'routeId':routeIdSelected, 'clientId':sessionId})
-            })
+            ws.current.send(
+                "/api/routes",
+                {},
+                JSON.stringify({'routeId':routeIdSelected, 'clientId':sessionId})
+            )
         }
-    }, [routeIdSelected, routes]);
+    }, [sessionId, routeIdSelected, routes]);
 
     useEffect(() => {
         if (!ws.current) {
-            ws.current = init(API_URL)
-            ws.current.activate();
+            ws.current = init(DEST_API_URL);
+            const sessionId = connect(ws.current);
+            setSessionId(sessionId);
         }
 
         return () => {
             if (ws.current?.connected) {
-                ws.current.deactivate();
+                disconnect(ws.current);
             }
             ws.current = null as unknown as Client
         };
